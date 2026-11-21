@@ -74,6 +74,7 @@ module spi_bus (
     input sel,
     input [11:0] offset,
     input we,
+    input re,
     input [31:0] wdata,
     input miso,
     output sclk,
@@ -85,14 +86,9 @@ module spi_bus (
     reg start;
     reg [15:0] divider;
     reg done_latched;
-    reg sel_prev;
-    reg [11:0] offset_prev;
-    reg we_prev;
     wire [7:0] rx_data;
     wire busy;
     wire done;
-    wire read_event = sel && !we &&
-                      (!sel_prev || we_prev || offset_prev != offset);
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -100,12 +96,9 @@ module spi_bus (
             start <= 0;
             divider <= 2;
             done_latched <= 0;
-            sel_prev <= 0;
-            offset_prev <= 0;
-            we_prev <= 0;
         end else begin
             start <= 0;
-            if (read_event && offset == 12'h004)
+            if (sel && re && offset == 12'h004)
                 done_latched <= 0;
             if (sel && we) begin
                 case (offset)
@@ -120,9 +113,6 @@ module spi_bus (
             end
             if (done && !(sel && we && offset == 12'h008 && wdata[0]))
                 done_latched <= 1;
-            sel_prev <= sel;
-            offset_prev <= offset;
-            we_prev <= we;
         end
     end
 

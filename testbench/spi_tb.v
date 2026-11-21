@@ -69,6 +69,7 @@ reg rst=1;
 reg sel=0;
 reg [11:0] offset=0;
 reg we=0;
+reg re=0;
 reg [31:0] wdata=0;
 wire sclk;
 wire cs;
@@ -82,7 +83,7 @@ integer errors=0;
 
 always #5 clk=~clk;
 
-spi_bus dut(.clk(clk),.rst(rst),.sel(sel),.offset(offset),.we(we),.wdata(wdata),.miso(miso),.sclk(sclk),.cs(cs),.mosi(mosi),.rdata(rdata));
+spi_bus dut(.clk(clk),.rst(rst),.sel(sel),.offset(offset),.we(we),.re(re),.wdata(wdata),.miso(miso),.sclk(sclk),.cs(cs),.mosi(mosi),.rdata(rdata));
 spi_slave_model slave(.rst(rst),.cs(cs),.sclk(sclk),.mosi(mosi),.miso(miso),.rx_data(slave_rx),.rx_done(slave_done));
 
 task write_reg;
@@ -91,6 +92,7 @@ input [31:0] value;
 begin
 @(negedge clk);
 sel=1; we=1; offset=addr; wdata=value;
+re=0;
 @(negedge clk);
 we=0;
 end
@@ -101,7 +103,10 @@ input [11:0] addr;
 begin
 @(negedge clk);
 sel=1; we=0; offset=addr;
+re=1;
 #1;
+@(negedge clk);
+re=0;
 end
 endtask
 
@@ -118,14 +123,33 @@ write_reg(12'h000,32'h000000A5);
 write_reg(12'h008,32'd1);
 repeat(180) @(negedge clk);
 read_reg(12'h00C);
-read_reg(12'h004);
+@(negedge clk);
+sel=1; re=1; we=0; offset=12'h004;
+#1;
 checks=checks+1;
 if(rdata[1] && !rdata[0]) $display("PASS: SPI transfer completed");
 else begin errors=errors+1; $display("FAIL: SPI status register %08h",rdata); end
+@(negedge clk);
+re=0;
 read_reg(12'h004);
 checks=checks+1;
 if(!rdata[1] && !rdata[0]) $display("PASS: SPI done clears after status read");
 else begin errors=errors+1; $display("FAIL: SPI status remained set after status read, status=%08h",rdata); end
+write_reg(12'h000,32'h000000A5);
+write_reg(12'h008,32'd1);
+repeat(180) @(negedge clk);
+@(negedge clk);
+sel=1; re=1; we=0; offset=12'h004;
+#1;
+checks=checks+1;
+if(rdata[1] && !rdata[0]) $display("PASS: SPI new transfer done asserted");
+else begin errors=errors+1; $display("FAIL: SPI new transfer status=%08h",rdata); end
+@(negedge clk);
+re=0;
+read_reg(12'h004);
+checks=checks+1;
+if(!rdata[1]) $display("PASS: SPI consecutive same-register status read clears done");
+else begin errors=errors+1; $display("FAIL: SPI consecutive status read did not clear done"); end
 read_reg(12'h000);
 checks=checks+1;
 if(rdata[7:0]==8'h3C) $display("PASS: SPI master received 3C");

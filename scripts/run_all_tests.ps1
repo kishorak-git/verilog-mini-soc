@@ -1,3 +1,7 @@
+param(
+    [switch]$NegativeControl
+)
+
 $ErrorActionPreference = "Continue"
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
@@ -10,6 +14,32 @@ if (-not (Test-Path $Iverilog)) {
 }
 if (-not (Test-Path $Vvp)) {
     $Vvp = "vvp.exe"
+}
+
+if ($NegativeControl) {
+    $OutputDir = Join-Path $ProjectRoot "simulation"
+    if (-not (Test-Path $OutputDir)) {
+        New-Item -ItemType Directory -Path $OutputDir | Out-Null
+    }
+    $NegativeVvp = Join-Path $OutputDir "negative_control_test.vvp"
+    $NegativeLog = Join-Path $OutputDir "negative_control_results.txt"
+    $NegativeArguments = @("-g2012","-Wall","-s","negative_control_tb","-o",$NegativeVvp,(Join-Path $ProjectRoot "testbench\negative_control_tb.v"))
+    $CompileOutput = @(& $Iverilog $NegativeArguments 2>&1)
+    $CompileExitCode = $LASTEXITCODE
+    if ($CompileExitCode -ne 0) {
+        $CompileOutput | Out-File -FilePath $NegativeLog -Encoding ASCII
+        Write-Host "NEGATIVE CONTROL FAILED: negative-control testbench did not compile"
+        exit 1
+    }
+    $SimulationOutput = @(& $Vvp $NegativeVvp 2>&1)
+    $SimulationText = ($SimulationOutput -join "`r`n")
+    $SimulationOutput | Out-File -FilePath $NegativeLog -Encoding ASCII
+    if ($SimulationText -match "FAIL:") {
+        Write-Host "NEGATIVE CONTROL VERIFIED: runner detected expected FAIL output"
+        exit 1
+    }
+    Write-Host "NEGATIVE CONTROL FAILED: expected failure was not detected"
+    exit 1
 }
 
 $OutputDir = Join-Path $ProjectRoot "simulation"

@@ -1,12 +1,24 @@
 # Verilog 32-bit Mini SoC
 
+![CI](https://github.com/kishorak-git/Verilog-Mini-SoC/actions/workflows/verilog-regression.yml/badge.svg)
+![Linux CI](https://github.com/kishorak-git/Verilog-Mini-SoC/actions/workflows/ci.yml/badge.svg)
 ![Simulation](https://img.shields.io/badge/simulation-Icarus%20Verilog-blue)
 ![Language](https://img.shields.io/badge/language-Verilog-orange)
-![Validation](https://img.shields.io/badge/validation-35%20checks-brightgreen)
+![Validation](https://img.shields.io/badge/validation-48%20checks-brightgreen)
 
-## Project overview
+## Project Introduction
 
 This project implements a simulation-based 32-bit Mini System-on-Chip (SoC) in Verilog. It contains a shared memory-mapped bus, address decoder, RAM, GPIO, timer, UART, and SPI master. The project is written for Icarus Verilog and verified with behavioral testbenches. It does not contain a CPU or physical FPGA hardware implementation.
+
+## Quick Navigation
+
+- [Architecture](./docs/architecture.md)
+- [Address and register maps](#address-map)
+- [Build instructions](#compilation)
+- [Simulation instructions](#simulation)
+- [Verification results](#verification-results)
+- [Limitations](#limitations)
+- [Future roadmap](#future-roadmap)
 
 ## Problem statement and motivation
 
@@ -23,11 +35,13 @@ Memory-mapped bus systems are a foundation of digital SoC design. This project d
 
 ## Architecture
 
-The top-level module is `mini_soc`. Address bits `[15:12]` select a RAM or peripheral region. Address bits `[11:0]` provide a 4 KB offset. The selected peripheral returns data on the shared `rdata` bus; invalid addresses return zero.
+The top-level module is `mini_soc`. Address bits `[15:12]` select a RAM or peripheral region. Address bits `[11:0]` provide a 4 KB offset. Write strobe `we` and explicit read strobe `re` control register access. A valid read event is `sel && re`; invalid addresses return zero on `rdata`.
+
+See the complete [architecture and data-flow documentation](./docs/architecture.md).
 
 ```mermaid
 flowchart LR
-    BUS[External bus: addr, we, wdata]
+    BUS[External bus: sel, re, we, addr, wdata, rdata]
     DEC[Address decoder]
     RAM[RAM 4 KB]
     GPIO[GPIO]
@@ -48,7 +62,7 @@ flowchart LR
     SPI -->|spi_rdata| BUS
 ```
 
-There is no CPU. The external testbench supplies the address, write-enable, and write-data signals.
+There is no CPU. The external testbench supplies the address, write-enable, read-strobe, and write-data signals.
 
 ## Main features
 
@@ -99,11 +113,14 @@ There is no CPU. The external testbench supplies the address, write-enable, and 
 
 Status bits:
 
+- Bit 3: framing error.
 - Bit 2: receive ready.
 - Bit 1: transmit done.
 - Bit 0: transmit busy.
 
-Receive Ready is sticky until a DATA or STATUS read. Transmit Done is sticky until a STATUS read or a new transmission.
+Receive Ready is sticky until a DATA or STATUS read. Framing Error is sticky until a STATUS read or a new framing-error event. Transmit Done is sticky until a STATUS read or a new transmission. A `re` pulse clears sticky status only while `sel` selects UART and only for the addressed register.
+
+The UART receiver uses a two-flop RX synchronizer. The synchronized signal detects a start condition, samples data bits near the center of their bit periods, validates the stop bit, and discards invalid bytes with a framing-error indication.
 
 ### SPI
 
@@ -132,11 +149,13 @@ Transfer Done is sticky until a STATUS read or a new transfer starts.
 ## Directory structure
 
 ```text
+.github/workflows/ GitHub Actions CI workflow
 rtl/          Synthesizable RTL modules
 testbench/    Standalone and full-system testbenches
 scripts/      PowerShell compile and regression scripts
 simulation/   Verified logs and generated Icarus binaries
 docs/         Architecture documentation
+docs/releases/ Release descriptions
 README.md     Project documentation
 ```
 
@@ -177,6 +196,57 @@ iverilog -g2012 -s uart_tb -o simulation\uart_test.vvp rtl\uart.v testbench\uart
 vvp simulation\uart_test.vvp
 ```
 
+On Linux or GitHub Ubuntu runners:
+
+```bash
+bash scripts/run_all.sh
+```
+
+The Linux runner requires an `ALL PASSED` success marker and fails on explicit `FAIL:` output or missing success markers.
+
+To verify negative-control failure detection separately:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_all_tests.ps1 -NegativeControl
+```
+
+This mode is expected to exit non-zero and must not be used in the normal regression suite.
+
+## Synthesis results
+
+Generic Yosys synthesis was reproduced with Yosys 0.71:
+
+```text
+mkdir -p simulation/synthesis
+yosys -s scripts/synth.ys
+```
+
+On Windows, the supporting wrapper can be used:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\synth.ps1
+```
+
+| Block | Generic Yosys cells |
+|---|---:|
+| RAM | 66,701 |
+| GPIO | 177 |
+| Timer | 553 |
+| UART | 643 |
+| SPI | 413 |
+| Mini SoC total | 68,761 |
+
+These are generic Yosys cell counts, not FPGA LUT, flip-flop, or DSP utilization figures. In this generic synthesis configuration, the 4 KB RAM is implemented with 32,768 flip-flops and is approximately 97% of the top-level cell count. This is an implementation limitation of generic synthesis and not a physical FPGA resource claim.
+
+Generated reports are saved under [simulation/synthesis](./simulation/synthesis).
+
+## Continuous integration
+
+GitHub Actions provides both Windows and Ubuntu workflows:
+
+- [`.github/workflows/verilog-regression.yml`](./.github/workflows/verilog-regression.yml) runs Windows Icarus compilation and the six-suite regression.
+- [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs Linux Icarus regression and Yosys synthesis.
+
 ## Verification results
 
 The latest automated regression result is:
@@ -186,10 +256,10 @@ The latest automated regression result is:
 | GPIO | 3 | 0 |
 | RAM | 4 | 0 |
 | Timer | 3 | 0 |
-| UART | 5 | 0 |
-| SPI | 5 | 0 |
+| UART | 16 | 0 |
+| SPI | 7 | 0 |
 | Full Mini SoC | 15 | 0 |
-| **Total** | **35** | **0** |
+| **Total** | **48** | **0** |
 
 Actual output is retained in [simulation/results.txt](./simulation/results.txt).
 
@@ -201,7 +271,7 @@ Actual output is retained in [simulation/results.txt](./simulation/results.txt).
 - No physical FPGA implementation or hardware timing validation is claimed.
 - RAM initialization is not specified from an external memory image.
 
-## Future improvements
+## Future Roadmap
 
 - Add byte strobes or a formal 32-bit bus protocol.
 - Add UART configurable parity and SPI sample-edge options.

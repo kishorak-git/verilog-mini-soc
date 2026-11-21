@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  simulation-and-synthesis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Icarus Verilog and Yosys
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog yosys
+
+      - name: Confirm tool versions
+        run: |
+          iverilog -V
+          vvp -V
+          yosys -V
+
+      - name: Run Linux regression
+        run: bash scripts/run_all.sh
+
+      - name: Run Yosys synthesis
+        if: always()
+        run: |
+          mkdir -p simulation/synthesis
+          yosys -s scripts/synth.ys
+
+      - name: Upload synthesis statistics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yosys-synthesis-results
+          path: simulation/synthesis/
+          if-no-files-found: warn
+
+      - name: Upload simulation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-verification-results
+          path: |
+            simulation/*_linux_results.txt
+            simulation/results.txt
+          if-no-files-found: warn

@@ -1,0 +1,56 @@
+name: Verilog Regression
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    name: Windows Icarus Verilog regression
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Icarus Verilog
+        shell: powershell
+        run: |
+          choco install iverilog --yes --no-progress
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+          if (-not (Test-Path "C:\iverilog\bin\iverilog.exe")) {
+            throw "Icarus Verilog installation did not create C:\iverilog\bin\iverilog.exe"
+          }
+          if (-not (Test-Path "C:\iverilog\bin\vvp.exe")) {
+            throw "Icarus Verilog installation did not create C:\iverilog\bin\vvp.exe"
+          }
+          echo "C:\iverilog\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Compile top-level Mini SoC
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\compile_soc.ps1
+          exit $LASTEXITCODE
+
+      - name: Run complete automated regression
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_all_tests.ps1
+          exit $LASTEXITCODE
+
+      - name: Upload simulation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mini-soc-verification-results
+          path: simulation/results.txt
+          if-no-files-found: warn

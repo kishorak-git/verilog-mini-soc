@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 module spi_slave_model (
     input rst,
     input cs,
@@ -67,6 +68,7 @@ module mini_soc_tb;
     reg rst;
     reg [15:0] addr;
     reg we;
+    reg re;
     reg [31:0] wdata;
     wire [31:0] rdata;
 
@@ -96,6 +98,7 @@ module mini_soc_tb;
         .rst(rst),
         .addr(addr),
         .we(we),
+        .re(re),
         .wdata(wdata),
         .rdata(rdata),
         .gpio_in(gpio_in),
@@ -128,6 +131,7 @@ module mini_soc_tb;
             addr = address;
             wdata = value;
             we = 1;
+            re = 0;
             @(negedge clk);
             we = 0;
         end
@@ -141,6 +145,7 @@ module mini_soc_tb;
             @(negedge clk);
             addr = address;
             we = 0;
+            re = 1;
             #1;
             checks = checks + 1;
             if (rdata === expected) begin
@@ -150,6 +155,8 @@ module mini_soc_tb;
                 $display("FAIL: %0s Expected=%h Actual=%h",
                          label_text, expected, rdata);
             end
+            @(negedge clk);
+            re = 0;
         end
     endtask
 
@@ -158,6 +165,7 @@ module mini_soc_tb;
         rst = 1;
         addr = 0;
         we = 0;
+        re = 0;
         wdata = 0;
         gpio_in = 0;
         checks = 0;
@@ -193,9 +201,13 @@ module mini_soc_tb;
         write_reg(16'h2000, 32'd1);
         read_check(16'h2000, 32'd1, "Timer enabled");
 
-        repeat (3) @(negedge clk);
-        addr = 16'h2004;
-        #1;
+        repeat (2) begin
+            @(negedge clk);
+            addr = 16'h2004;
+            re = 0;
+            we = 0;
+            #1;
+        end
         checks = checks + 1;
         if (rdata > 0 && rdata <= 5)
             $display("PASS: Timer counter is operating");
@@ -212,7 +224,7 @@ module mini_soc_tb;
 
         repeat (150) begin
             @(negedge clk);
-            if (dut.uart_unit.rx_ready)
+            if (dut.uart_unit.rx_ready_latched)
                 uart_seen = 1;
         end
 
@@ -234,7 +246,7 @@ module mini_soc_tb;
 
         repeat (120) begin
             @(negedge clk);
-            if (dut.spi_unit.done)
+            if (dut.spi_unit.done_latched)
                 spi_seen = 1;
         end
 

@@ -1,0 +1,22 @@
+
+24. Printing statistics.
+
+=== gpio ===
+
+        +----------Local Count, excluding submodules.
+        |
+       91 wires
+      257 wire bits
+       10 public wires
+      176 public wire bits
+        9 ports
+      144 port bits
+      177 cells
+        1   $_ANDNOT_
+       64   $_AND_
+       32   $_DFFE_PP0P_
+       32   $_DFF_PP0_
+       32   $_MUX_
+        4   $_NAND_
+        7   $_NOR_
+        5   $_OR_

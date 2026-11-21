@@ -1,5 +1,5 @@
 MINI SOC AUTOMATED VERIFICATION
-Run timestamp: 2026-11-21 16:55:28
+Run timestamp: 2026-11-21 17:40:46
 
 ======== GPIO ========
 COMPILATION PASSED
@@ -11,7 +11,7 @@ PASS: GPIO deselected output
 GPIO CHECKS: 3
 GPIO ERRORS: 0
 GPIO TEST: ALL PASSED
-D:\Verilog-Mini-SoC\testbench\gpio_tb.v:86: $finish called at 42000 (1ps)
+D:\Verilog-Mini-SoC\testbench\gpio_tb.v:87: $finish called at 42000 (1ps)
 
 ======== RAM ========
 COMPILATION PASSED
@@ -42,12 +42,23 @@ SIMULATION PASSED
 ========== UART TEST ==========
 PASS: UART baud divider register
 PASS: UART loopback reception ready
-PASS: UART transmit done
-PASS: UART receive-ready and transmit-done clear after status read
-PASS: UART received ASCII A
-UART CHECKS: 5  ERRORS: 0
+PASS: UART receive-ready clears after status read
+PASS: UART loopback received ASCII A
+PASS: UART first consecutive status read sees ready
+PASS: UART same-register consecutive read sees new ready
+PASS: UART external received 00
+PASS: UART external received FF
+PASS: UART external received 55
+PASS: UART external received AA
+PASS: UART external received 41
+PASS: UART deterministic random byte 2c
+PASS: UART bad stop sets framing error without ready
+PASS: UART framing error clears after status read
+PASS: UART short glitch generates no ready or framing error
+PASS: UART start while busy preserves current byte
+UART CHECKS: 16  ERRORS: 0
 UART TEST: ALL PASSED
-D:\Verilog-Mini-SoC\testbench\uart_tb.v:70: $finish called at 1721000 (1ps)
+D:\Verilog-Mini-SoC\testbench\uart_tb.v:241: $finish called at 12470000 (1ps)
 
 ======== SPI ========
 COMPILATION PASSED
@@ -56,11 +67,13 @@ SIMULATION PASSED
 PASS: SPI divider register
 PASS: SPI transfer completed
 PASS: SPI done clears after status read
+PASS: SPI new transfer done asserted
+PASS: SPI consecutive same-register status read clears done
 PASS: SPI master received 3C
 PASS: SPI slave received A5
-SPI CHECKS: 5  ERRORS: 0
+SPI CHECKS: 7  ERRORS: 0
 SPI TEST: ALL PASSED
-D:\Verilog-Mini-SoC\testbench\spi_tb.v:139: $finish called at 1941000 (1ps)
+D:\Verilog-Mini-SoC\testbench\spi_tb.v:163: $finish called at 3870000 (1ps)
 
 ======== Full Mini SoC ========
 COMPILATION PASSED
@@ -100,10 +113,10 @@ PASS: Invalid address returns zero
 MINI SOC: ALL TESTS PASSED
 Checks: 15  Errors: 0
 ========================================
-D:\Verilog-Mini-SoC\testbench\mini_soc_tb.v:273: $finish called at 3111000 (1ps)
+D:\Verilog-Mini-SoC\testbench\mini_soc_tb.v:285: $finish called at 3210000 (1ps)
 
 VERIFICATION SUMMARY
 Suites failed: 0
-Total checks: 35
+Total checks: 48
 Total errors: 0
 MINI SOC AUTOMATED REGRESSION: ALL PASSED

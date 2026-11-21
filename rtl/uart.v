@@ -85,7 +85,8 @@ module uart_rx (
     input rx,
     input [15:0] clocks_per_bit,
     output reg [7:0] data,
-    output reg ready
+    output reg ready,
+    output reg framing_error
 );
     localparam IDLE = 2'd0;
     localparam START = 2'd1;
@@ -96,30 +97,39 @@ module uart_rx (
     reg [15:0] clock_count;
     reg [2:0] bit_index;
     reg [7:0] shift_data;
+    reg rx_sync0;
+    reg rx_sync1;
+    wire rx_synchronized = rx_sync1;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
+            rx_sync0 <= 1;
+            rx_sync1 <= 1;
             state <= IDLE;
             clock_count <= 0;
             bit_index <= 0;
             shift_data <= 0;
             data <= 0;
             ready <= 0;
+            framing_error <= 0;
         end else begin
+            rx_sync0 <= rx;
+            rx_sync1 <= rx_sync0;
+            framing_error <= 0;
             ready <= 0;
 
             case (state)
                 IDLE: begin
                     clock_count <= 0;
                     bit_index <= 0;
-                    if (!rx)
+                    if (!rx_synchronized)
                         state <= START;
                 end
 
                 START: begin
                     if (clock_count == (clocks_per_bit >> 1)) begin
                         clock_count <= 0;
-                        if (!rx)
+                        if (!rx_synchronized)
                             state <= DATA;
                         else
                             state <= IDLE;
@@ -129,7 +139,7 @@ module uart_rx (
                 DATA: begin
                     if (clock_count >= clocks_per_bit - 1) begin
                         clock_count <= 0;
-                        shift_data[bit_index] <= rx;
+                        shift_data[bit_index] <= rx_synchronized;
                         if (bit_index == 7)
                             state <= STOP;
                         else
@@ -140,8 +150,12 @@ module uart_rx (
                 STOP: begin
                     if (clock_count >= clocks_per_bit - 1) begin
                         clock_count <= 0;
-                        data <= shift_data;
-                        ready <= 1;
+                        if (rx_synchronized) begin
+                            data <= shift_data;
+                            ready <= 1;
+                        end else begin
+                            framing_error <= 1;
+                        end
                         state <= IDLE;
                     end else clock_count <= clock_count + 1;
                 end
@@ -156,6 +170,7 @@ module uart_bus (
     input sel,
     input [11:0] offset,
     input we,
+    input re,
     input [31:0] wdata,
     input rx,
     output tx,
@@ -166,15 +181,12 @@ module uart_bus (
     reg tx_start;
     reg rx_ready_latched;
     reg tx_done_latched;
-    reg sel_prev;
-    reg [11:0] offset_prev;
-    reg we_prev;
+    reg framing_error_latched;
     wire tx_busy;
     wire tx_done;
     wire [7:0] rx_data;
     wire rx_ready;
-    wire read_event = sel && !we &&
-                      (!sel_prev || we_prev || offset_prev != offset);
+    wire rx_framing_error;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -183,17 +195,16 @@ module uart_bus (
             tx_start <= 0;
             rx_ready_latched <= 0;
             tx_done_latched <= 0;
-            sel_prev <= 0;
-            offset_prev <= 0;
-            we_prev <= 0;
+            framing_error_latched <= 0;
         end else begin
             tx_start <= 0;
-            if (read_event) begin
+            if (sel && re) begin
                 case (offset)
                     12'h000: rx_ready_latched <= 0;
                     12'h004: begin
                         rx_ready_latched <= 0;
                         tx_done_latched <= 0;
+                        framing_error_latched <= 0;
                     end
                 endcase
             end
@@ -211,9 +222,8 @@ module uart_bus (
                 rx_ready_latched <= 1;
             if (tx_done && !(sel && we && offset == 12'h000))
                 tx_done_latched <= 1;
-            sel_prev <= sel;
-            offset_prev <= offset;
-            we_prev <= we;
+            if (rx_framing_error)
+                framing_error_latched <= 1;
         end
     end
 
@@ -234,11 +244,12 @@ module uart_bus (
         .rx(rx),
         .clocks_per_bit(baud),
         .data(rx_data),
-        .ready(rx_ready)
+        .ready(rx_ready),
+        .framing_error(rx_framing_error)
     );
 
     assign rdata = !sel ? 32'd0 :
                    offset == 12'h000 ? {24'd0, rx_data} :
-                   offset == 12'h004 ? {29'd0, rx_ready_latched, tx_done_latched, tx_busy} :
+                   offset == 12'h004 ? {28'd0, framing_error_latched, rx_ready_latched, tx_done_latched, tx_busy} :
                    offset == 12'h008 ? {16'd0, baud} : 32'd0;
 endmodule

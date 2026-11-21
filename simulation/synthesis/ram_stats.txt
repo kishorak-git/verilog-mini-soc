@@ -1,0 +1,20 @@
+
+18. Printing statistics.
+
+=== ram ===
+
+        +----------Local Count, excluding submodules.
+        |
+    34931 wires
+    66779 wire bits
+     1030 public wires
+    32847 public wire bits
+        6 ports
+       79 port bits
+    66701 cells
+        4   $_ANDNOT_
+     1181   $_AND_
+    32768   $_DFFE_PP_
+    32736   $_MUX_
+        2   $_NOR_
+       10   $_NOT_

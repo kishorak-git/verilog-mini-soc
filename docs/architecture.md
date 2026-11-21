@@ -37,6 +37,7 @@ The top-level module `mini_soc` instantiates one RAM module and one instance of 
 - `addr[15:12]` selects the addressed region.
 - `addr[11:0]` is passed to the selected module as a register offset.
 - `we` enables a synchronous write.
+- `re` enables an explicit synchronous read.
 - `wdata[31:0]` carries write data.
 - `rdata[31:0]` carries the selected read response.
 - An unmapped address region returns zero.
@@ -91,14 +92,31 @@ The UART bus wrapper contains a transmit datapath, receive datapath, baud regist
 
 Status bit mapping:
 
+- Bit 3: framing error.
 - Bit 2: receive ready.
 - Bit 1: transmit done.
 - Bit 0: transmit busy.
 
-Internally, `rx_ready` and `tx_done` remain one-clock pulses. Bus-facing latches make these statuses sticky:
+The external RX input passes through separate `rx_sync0` and `rx_sync1` sequential registers. UART FSM decisions use only `rx_sync1`. The receiver verifies a confirmed start condition, samples data near the center of each configured bit period, and validates the stop bit. Invalid stop bits discard the byte and set a sticky framing-error latch.
+
+```mermaid
+flowchart LR
+    RX[External RX] --> S0[rx_sync0]
+    S0 --> S1[rx_sync1]
+    S1 --> FSM[UART RX FSM]
+    FSM --> DATA[Accepted data]
+    FSM --> READY[RX Ready latch]
+    FSM --> FRAME[Framing Error latch]
+    RE[Explicit re strobe] --> STATUS[Status read clear]
+    STATUS --> READY
+    STATUS --> FRAME
+```
+
+Internally, `rx_ready`, `tx_done`, and the framing-error event remain completion pulses. Bus-facing latches make these statuses sticky:
 
 - RX Ready remains set until DATA or STATUS is read, or a new receive event sets it again.
 - TX Done remains set until STATUS is read or a new transmission is started.
+- Framing Error remains set until STATUS is read or a new framing-error event occurs.
 - Completion events have priority over simultaneous status-clear or new-start actions.
 
 ## SPI
@@ -121,11 +139,11 @@ Internally, SPI `done` remains a one-clock pulse. The bus wrapper latches it so 
 
 ## Data flow
 
-1. A testbench or bus master presents `addr`, `we`, and `wdata`.
+1. A testbench or bus master presents `addr`, `we`, `re`, and `wdata`.
 2. `mini_soc` decodes `addr[15:12]` and enables exactly one peripheral.
 3. The selected peripheral decodes `addr[11:0]`.
 4. A write updates the target register or initiates a peripheral operation.
-5. A read selects the appropriate register or status and returns it on `rdata`.
+5. A read asserted with `sel && re` selects the appropriate register or status and returns it on `rdata`.
 6. Invalid regions return zero.
 
 UART and SPI loopback/integration behavior is evaluated by RTL testbenches and a behavioral slave model.
