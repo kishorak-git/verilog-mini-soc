@@ -1,0 +1,109 @@
+MINI SOC AUTOMATED VERIFICATION
+Run timestamp: 2026-11-21 16:55:28
+
+======== GPIO ========
+COMPILATION PASSED
+SIMULATION PASSED
+PASS: GPIO output register
+PASS: GPIO input register
+PASS: GPIO deselected output
+-----------------------------
+GPIO CHECKS: 3
+GPIO ERRORS: 0
+GPIO TEST: ALL PASSED
+D:\Verilog-Mini-SoC\testbench\gpio_tb.v:86: $finish called at 42000 (1ps)
+
+======== RAM ========
+COMPILATION PASSED
+SIMULATION PASSED
+========== RAM TEST ==========
+PASS: RAM address 000 = 12345678
+PASS: RAM address 004 = a5a55a5a
+PASS: RAM address ffc = deadbeef
+PASS: RAM deselected output
+RAM CHECKS: 4  ERRORS: 0
+RAM TEST: ALL PASSED
+D:\Verilog-Mini-SoC\testbench\ram_tb.v:55: $finish called at 92000 (1ps)
+
+======== Timer ========
+COMPILATION PASSED
+SIMULATION PASSED
+========== TIMER TEST ==========
+PASS: Timer period register
+PASS: Timer counter increments within period
+PASS: Timer stops when disabled
+TIMER CHECKS: 3  ERRORS: 0
+TIMER TEST: ALL PASSED
+D:\Verilog-Mini-SoC\testbench\timer_tb.v:66: $finish called at 181000 (1ps)
+
+======== UART ========
+COMPILATION PASSED
+SIMULATION PASSED
+========== UART TEST ==========
+PASS: UART baud divider register
+PASS: UART loopback reception ready
+PASS: UART transmit done
+PASS: UART receive-ready and transmit-done clear after status read
+PASS: UART received ASCII A
+UART CHECKS: 5  ERRORS: 0
+UART TEST: ALL PASSED
+D:\Verilog-Mini-SoC\testbench\uart_tb.v:70: $finish called at 1721000 (1ps)
+
+======== SPI ========
+COMPILATION PASSED
+SIMULATION PASSED
+========== SPI TEST ==========
+PASS: SPI divider register
+PASS: SPI transfer completed
+PASS: SPI done clears after status read
+PASS: SPI master received 3C
+PASS: SPI slave received A5
+SPI CHECKS: 5  ERRORS: 0
+SPI TEST: ALL PASSED
+D:\Verilog-Mini-SoC\testbench\spi_tb.v:139: $finish called at 1941000 (1ps)
+
+======== Full Mini SoC ========
+COMPILATION PASSED
+SIMULATION PASSED
+========================================
+       MINI SOC FULL VERIFICATION
+========================================
+
+========== RAM TEST ==========
+PASS: RAM first word
+PASS: RAM second word
+
+========== GPIO TEST ==========
+PASS: GPIO output register
+PASS: GPIO input register
+
+========== TIMER TEST ==========
+PASS: Timer period register
+PASS: Timer enabled
+PASS: Timer counter is operating
+
+========== UART TEST ==========
+PASS: UART divider register
+PASS: UART loopback reception completed
+PASS: UART received ASCII A
+
+========== SPI TEST ==========
+PASS: SPI divider register
+PASS: SPI transfer completed
+PASS: SPI master received 3C
+PASS: SPI slave received A5
+
+========== ADDRESS DECODER TEST ==========
+PASS: Invalid address returns zero
+
+========================================
+MINI SOC: ALL TESTS PASSED
+Checks: 15  Errors: 0
+========================================
+D:\Verilog-Mini-SoC\testbench\mini_soc_tb.v:273: $finish called at 3111000 (1ps)
+
+VERIFICATION SUMMARY
+Suites failed: 0
+Total checks: 35
+Total errors: 0
+MINI SOC AUTOMATED REGRESSION: ALL PASSED

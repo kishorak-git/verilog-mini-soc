@@ -1,0 +1,7 @@
+*.vvp
+*.out
+*.log
+*.tmp
+*.bak
+*~
+.DS_Store
