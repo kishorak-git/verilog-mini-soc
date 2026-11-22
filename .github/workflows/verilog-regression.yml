@@ -27,13 +27,29 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
-          if (-not (Test-Path "C:\iverilog\bin\iverilog.exe")) {
-            throw "Icarus Verilog installation did not create C:\iverilog\bin\iverilog.exe"
+
+          $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+          $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+          $env:Path = @($machinePath, $userPath) -join ";"
+
+          $iverilogCommand = Get-Command "iverilog.exe" -ErrorAction SilentlyContinue
+          $vvpCommand = Get-Command "vvp.exe" -ErrorAction SilentlyContinue
+          if (-not $iverilogCommand) {
+            throw "Icarus Verilog executable 'iverilog.exe' was not found on PATH"
           }
-          if (-not (Test-Path "C:\iverilog\bin\vvp.exe")) {
-            throw "Icarus Verilog installation did not create C:\iverilog\bin\vvp.exe"
+          if (-not $vvpCommand) {
+            throw "Icarus Verilog executable 'vvp.exe' was not found on PATH"
           }
-          echo "C:\iverilog\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          $iverilogDir = Split-Path -Parent $iverilogCommand.Source
+          $vvpDir = Split-Path -Parent $vvpCommand.Source
+          if ($iverilogDir -ne $vvpDir) {
+            throw "iverilog.exe and vvp.exe resolved to different directories"
+          }
+
+          $iverilogDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "iverilog: $($iverilogCommand.Source)"
+          Write-Host "vvp:      $($vvpCommand.Source)"
 
       - name: Compile top-level Mini SoC
         shell: powershell

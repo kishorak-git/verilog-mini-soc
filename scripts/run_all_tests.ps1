@@ -5,16 +5,16 @@ param(
 $ErrorActionPreference = "Continue"
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$IcarusDir = "C:\iverilog\bin"
-$Iverilog = Join-Path $IcarusDir "iverilog.exe"
-$Vvp = Join-Path $IcarusDir "vvp.exe"
-
-if (-not (Test-Path $Iverilog)) {
-    $Iverilog = "iverilog.exe"
+$IverilogCommand = Get-Command "iverilog.exe" -ErrorAction SilentlyContinue
+if (-not $IverilogCommand) {
+    throw "Icarus Verilog executable 'iverilog.exe' was not found on PATH"
 }
-if (-not (Test-Path $Vvp)) {
-    $Vvp = "vvp.exe"
+$VvpCommand = Get-Command "vvp.exe" -ErrorAction SilentlyContinue
+if (-not $VvpCommand) {
+    throw "Icarus Verilog executable 'vvp.exe' was not found on PATH"
 }
+$Iverilog = $IverilogCommand.Source
+$Vvp = $VvpCommand.Source
 
 if ($NegativeControl) {
     $OutputDir = Join-Path $ProjectRoot "simulation"
