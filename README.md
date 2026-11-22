@@ -161,7 +161,7 @@ README.md     Project documentation
 
 ## Installation and prerequisites
 
-Install Icarus Verilog with `iverilog.exe` and `vvp.exe` available under `C:\iverilog\bin`, or place both on `PATH`. Windows PowerShell 5.1 is sufficient.
+Install Icarus Verilog with `iverilog.exe` and `vvp.exe` available on `PATH`. Windows PowerShell 5.1 is sufficient. The bundled scripts resolve both executables from `PATH`, including Chocolatey's Icarus Verilog shims.
 
 Clone and enter the repository:
 

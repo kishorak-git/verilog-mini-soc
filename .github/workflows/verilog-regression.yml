@@ -27,13 +27,20 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
-          if (-not (Test-Path "C:\iverilog\bin\iverilog.exe")) {
-            throw "Icarus Verilog installation did not create C:\iverilog\bin\iverilog.exe"
+          $Iverilog = Get-Command iverilog.exe -ErrorAction SilentlyContinue
+          $Vvp = Get-Command vvp.exe -ErrorAction SilentlyContinue
+          if (-not $Iverilog) {
+            throw "Icarus Verilog installation did not provide iverilog.exe on PATH"
           }
-          if (-not (Test-Path "C:\iverilog\bin\vvp.exe")) {
-            throw "Icarus Verilog installation did not create C:\iverilog\bin\vvp.exe"
+          if (-not $Vvp) {
+            throw "Icarus Verilog installation did not provide vvp.exe on PATH"
           }
-          echo "C:\iverilog\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $IverilogDir = Split-Path -Parent $Iverilog.Source
+          $VvpDir = Split-Path -Parent $Vvp.Source
+          echo $IverilogDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          if ($VvpDir -ne $IverilogDir) {
+            echo $VvpDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
 
       - name: Compile top-level Mini SoC
         shell: powershell

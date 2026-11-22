@@ -5,16 +5,10 @@ param(
 $ErrorActionPreference = "Continue"
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$IcarusDir = "C:\iverilog\bin"
-$Iverilog = Join-Path $IcarusDir "iverilog.exe"
-$Vvp = Join-Path $IcarusDir "vvp.exe"
-
-if (-not (Test-Path $Iverilog)) {
-    $Iverilog = "iverilog.exe"
-}
-if (-not (Test-Path $Vvp)) {
-    $Vvp = "vvp.exe"
-}
+$IverilogCommand = Get-Command iverilog.exe -ErrorAction SilentlyContinue
+$VvpCommand = Get-Command vvp.exe -ErrorAction SilentlyContinue
+$Iverilog = if ($IverilogCommand) { $IverilogCommand.Source } else { "iverilog.exe" }
+$Vvp = if ($VvpCommand) { $VvpCommand.Source } else { "vvp.exe" }
 
 if ($NegativeControl) {
     $OutputDir = Join-Path $ProjectRoot "simulation"
