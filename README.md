@@ -123,6 +123,14 @@ The badges at the top show the current status of each workflow on `main`.
 
 The project includes a generic Yosys synthesis flow. Generic cell counts are tool-level statistics and must not be interpreted as FPGA LUT, flip-flop, DSP, or timing utilization for a particular device. The RAM implementation and synthesis assumptions are described in the synthesis reports.
 
+## Waveforms
+
+![UART TX frame](docs/waveforms/uart_tx_frame.png)
+
+UART TX frame for byte 0x41 ('A'): start bit, eight data bits LSB first (1 0 0 0 0 0 1 0), stop bit. Simulated at a fast baud rate to keep regression runs short (about 40 ns per bit).
+
+Waveforms are generated from the testbenches (VCD dumped to simulation\waves, not committed) and viewed in GTKWave.
+
 ## Limitations
 
 - No CPU or instruction-set architecture is included.

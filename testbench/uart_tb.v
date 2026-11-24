@@ -94,6 +94,8 @@ end
 endtask
 
 initial begin
+$dumpfile("simulation/waves/uart_tb.vcd");
+$dumpvars(0, uart_tb);
 $display("========== UART TEST ==========");
 repeat(3) @(negedge clk);
 rst=0;

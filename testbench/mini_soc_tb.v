@@ -161,6 +161,9 @@ module mini_soc_tb;
     endtask
 
     initial begin
+        $dumpfile("simulation/waves/mini_soc_tb.vcd");
+        $dumpvars(0, mini_soc_tb);
+
         clk = 0;
         rst = 1;
         addr = 0;
