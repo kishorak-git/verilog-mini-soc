@@ -129,6 +129,14 @@ The project includes a generic Yosys synthesis flow. Generic cell counts are too
 
 UART TX frame for byte 0x41 ('A'): start bit, eight data bits LSB first (1 0 0 0 0 0 1 0), stop bit. Simulated at a fast baud rate to keep regression runs short (about 40 ns per bit).
 
+![SPI transfer](docs/waveforms/spi_transfer.png)
+
+SPI master/slave signal activity showing chip select, serial clock, MOSI, and MISO.
+
+![SoC bus access](docs/waveforms/soc_bus_access.png)
+
+Memory-mapped bus activity showing address, read/write controls, write data, and read data.
+
 Waveforms are generated from the testbenches (VCD dumped to simulation\waves, not committed) and viewed in GTKWave.
 
 ## Limitations
