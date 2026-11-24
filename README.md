@@ -263,6 +263,14 @@ The latest automated regression result is:
 
 Actual output is retained in [simulation/results.txt](./simulation/results.txt).
 
+## Waveforms
+
+![UART TX frame](docs/waveforms/uart_tx_frame.png)
+
+UART TX frame for byte 0x41 ('A'): start bit, eight data bits LSB first (1 0 0 0 0 0 1 0), stop bit. Simulated at a fast baud rate to keep regression runs short (about 40 ns per bit).
+
+Waveforms are generated from the testbenches (VCD dumped to simulation\waves, not committed) and viewed in GTKWave.
+
 ## Limitations
 
 - There is no CPU or instruction-set architecture.

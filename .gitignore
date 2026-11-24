@@ -7,3 +7,4 @@
 .DS_Store
 simulation/synthesis/*.json
 simulation/synthesis/*.v
+*.vcd

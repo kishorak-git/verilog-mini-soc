@@ -111,6 +111,8 @@ end
 endtask
 
 initial begin
+$dumpfile("simulation/waves/spi_tb.vcd");
+$dumpvars(0, spi_tb);
 $display("========== SPI TEST ==========");
 repeat(3) @(negedge clk);
 rst=0;
