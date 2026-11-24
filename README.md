@@ -131,7 +131,7 @@ UART TX frame for byte 0x41 ('A'): start bit, eight data bits LSB first (1 0 0 0
 
 ![SPI transfer](docs/waveforms/spi_transfer.png)
 
-SPI master/slave signal activity showing chip select, serial clock, MOSI, and MISO.
+SPI master transfer (mode 0, divider 2): chip select asserts, SCLK pulses, and data shifts on MOSI and MISO.
 
 ![SoC bus access](docs/waveforms/soc_bus_access.png)
 
